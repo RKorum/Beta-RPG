@@ -1,7 +1,9 @@
 import pygame, random
 
 '''RPG
-- Игра, нужно убивать врагов и получать опыт, повышая уровень и получая скиллпоинты
+
+    Russian/Русский
+- Игра на языке програмирования python, сделана с помощью библиотеки pygame, нужно убивать врагов и получать опыт, повышая уровень и получая скиллпоинты
 - Есть меню прокачки и меню со статистикой персонажа
 - Враги появляются в одной случайно-заданной точке, есть список с возможными координатами появления
 - Каждый уровень даёт по 3 скиллпоинта, скиллпоинты можно потратить на повышения здоровья или атаки
@@ -16,6 +18,25 @@ import pygame, random
 - класс Bonus - бонусы
 - класс Helper - хендлер
 - класс Run - запуск игры
+(как только проект в релиз войдёт создам exe файл для запуска, и можно будет запустить код даже не имея пайтона на компьютере)
+
+    English/Английский
+- The game is in the python programming language, made using the pygame library, you need to kill enemies and gain experience by leveling up and getting skill points
+- There is a leveling menu and a menu with character stats
+- Enemies appear at one randomly-set point, there is a list with possible coordinates of appearance
+- Each level gives 3 skillpoints, skillpoints can be spent on health upgrades or attacks
+
+- Enemies can attack the player, which of course is typical for any RPG game
+- In order to restore health, you need to find a red bonus, but enemies can also take the bonus instead of you
+- If the enemy takes the bonus, he will become stronger (if he took the yellow bonus, he will attack harder, if he took the red one, his health will increase)
+
+- Player class - the player himself
+- MagicBall class - Player's shots
+- Enemy class - the enemy
+- Bonus class - bonuses
+- Helper - handler class
+- Run class - starting the game
+(as soon as the project is released, I will create an exe file to run, and you can run the code even without having Python on your computer)
 '''
 
 
@@ -54,22 +75,6 @@ class Player:
 
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
-        self.walk_right_images = [
-            pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_right/player_walk_1.png'), (100, 100)),
-            pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_right/player_walk_2.png'), (100, 100)),
-        ]
-        self.walk_left_images = [
-            pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_left/player_walk_1.png'), (100, 100)),
-            pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_left/player_walk_2.png'), (100, 100)),
-        ]
-        self.walk_up_images = [
-            pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_up/player_walk_1.png'), (100, 100)),
-            pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_up/player_walk_2.png'), (100, 100)),
-        ]
-        self.walk_down_images = [
-            pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_down/player_walk_1.png'), (100, 100)),
-            pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_down/player_walk_2.png'), (100, 100)),
-        ]
         self.static_images = {
             'down': pygame.transform.smoothscale(pygame.image.load('Image/Player/static/playerstatic_down.png'), (100, 100)),
             'up': pygame.transform.smoothscale(pygame.image.load('Image/Player/static/playerstatic_up.png'), (100, 100)),
@@ -82,6 +87,24 @@ class Player:
             'right': pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/attack/player_attack_right.png'), (100, 100)),
             'left': pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/attack/player_attack_left.png'), (100, 100))
         }
+        self.dynamic_animations = {
+            'walk_right': (
+                pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_right/player_walk_1.png'), (100, 100)),
+                pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_right/player_walk_2.png'), (100, 100)),
+            ),
+            'walk_left': (
+                pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_left/player_walk_1.png'), (100, 100)),
+                pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_left/player_walk_2.png'), (100, 100)),
+            ),
+            'walk_up': (
+                pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_up/player_walk_1.png'), (100, 100)),
+                pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_up/player_walk_2.png'), (100, 100)),
+            ),
+            'walk_down': (
+                pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_down/player_walk_1.png'), (100, 100)),
+                pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/walk_down/player_walk_2.png'), (100, 100)),
+            )
+        }
 
     def change_animation(self, movement):
         if self.attack_cd <= 0:
@@ -91,19 +114,19 @@ class Player:
                 self.animation_frame = 0 if self.animation_frame == 1 else 1
 
             if movement == 'right':
-                self.image = self.walk_right_images[self.animation_frame]
+                self.image = self.dynamic_animations['walk_right'][self.animation_frame]
                 self.direction = 'right'
 
             if movement == 'left':
-                self.image = self.walk_left_images[self.animation_frame]
+                self.image = self.dynamic_animations['walk_left'][self.animation_frame]
                 self.direction = 'left'
 
             if movement == 'up':
-                self.image = self.walk_up_images[self.animation_frame]
+                self.image = self.dynamic_animations['walk_up'][self.animation_frame]
                 self.direction = 'up'
 
             if movement == 'down':
-                self.image = self.walk_down_images[self.animation_frame]
+                self.image = self.dynamic_animations['walk_down'][self.animation_frame]
                 self.direction = 'down'
 
             if movement == 'static':
@@ -200,25 +223,25 @@ class Enemy:
         self.damage = damage
 
         self.width, self.height = 90, 90
-
-        self.animations_left = [
-            pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/left/enemy_run_left_2.png'), (self.width, self.height)),
-            pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/left/enemy_run_left.png'), (self.width, self.height))
-        ]
-
-        self.animation_right = [
-            pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/right/enemy_run_right.png'), (self.width, self.height)),
-            pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/right/enemy_run_right_2.png'), (self.width, self.height))
-        ]
-
-        self.static_animations = [
-            pygame.transform.smoothscale(pygame.image.load('Image/Enemy/static/enemy_static_2.png'), (self.width, self.height)),
-            pygame.transform.smoothscale(pygame.image.load('Image/Enemy/static/enemy_static.png'), (self.width, self.height))
-        ]
+        
+        self.animations = {
+            'left': (
+                pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/left/enemy_run_left_2.png'), (self.width, self.height)),
+                pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/left/enemy_run_left.png'), (self.width, self.height))
+            ),
+            'right': (
+                pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/right/enemy_run_right.png'), (self.width, self.height)),
+                pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/right/enemy_run_right_2.png'), (self.width, self.height))
+            ),
+            'static': (
+                pygame.transform.smoothscale(pygame.image.load('Image/Enemy/static/enemy_static_2.png'), (self.width, self.height)),
+                pygame.transform.smoothscale(pygame.image.load('Image/Enemy/static/enemy_static.png'), (self.width, self.height))
+            )
+        }
 
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
-        self.image = self.static_animations[0]
+        self.image = self.animations['left'][0]
         self.animation_timer = 200
         self.phase_of_animation = 0
         self.speed = 0.3
@@ -233,11 +256,11 @@ class Enemy:
             self.animation_timer = current_time
 
         if movement == 'left':
-            self.image = self.animations_left[self.phase_of_animation]
+            self.image = self.animations['left'][self.phase_of_animation]
         if movement == 'right':
-            self.image = self.animation_right[self.phase_of_animation]
+            self.image = self.animations['right'][self.phase_of_animation]
         if movement == 'static':
-            self.image = self.static_animations[self.phase_of_animation]
+            self.image = self.animations['static'][self.phase_of_animation]
 
         self.rect = pygame.Rect(self.x, self.y, 10 if movement == 'up' or movement == 'down' else 40,
                                 40 if movement == 'up' or movement == 'down' else 10)
@@ -287,20 +310,20 @@ class Bonus:
             enemy.width += 20
             enemy.height += 20
             # текстурки синхронизируем
-            enemy.animations_left = [
-                pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/left/enemy_run_left_2.png'), (enemy.width, enemy.height)),
-                pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/left/enemy_run_left.png'), (enemy.width, enemy.height))
-            ]
-
-            enemy.animation_right = [
-                pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/right/enemy_run_right.png'), (enemy.width, enemy.height)),
-                pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/right/enemy_run_right_2.png'), (enemy.width, enemy.height))
-            ]
-
-            enemy.static_animations = [
-                pygame.transform.smoothscale(pygame.image.load('Image/Enemy/static/enemy_static_2.png'), (enemy.width, enemy.height)),
-                pygame.transform.smoothscale(pygame.image.load('Image/Enemy/static/enemy_static.png'), (enemy.width, enemy.height))
-            ]
+            self.animations = {
+                'left': (
+                    pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/left/enemy_run_left_2.png'), (enemy.width, enemy.height)),
+                    pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/left/enemy_run_left.png'), (enemy.width, enemy.height))
+                ),
+                'right': (
+                    pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/right/enemy_run_right.png'), (enemy.width, enemy.height)),
+                    pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/right/enemy_run_right_2.png'), (enemy.width, enemy.height))
+                ),
+                'static': (
+                    pygame.transform.smoothscale(pygame.image.load('Image/Enemy/static/enemy_static_2.png'), (enemy.width, enemy.height)),
+                    pygame.transform.smoothscale(pygame.image.load('Image/Enemy/static/enemy_static.png'), (enemy.width, enemy.height))
+                )
+            }
 
 
 class Helper:
@@ -401,7 +424,7 @@ class Runner:
 
                             # механика движения врага, он ещё может твои бонусы забирать теперь
                             if abs(enemy.rect.centerx - player.rect.centerx) < abs(enemy.rect.centerx - bonus.rect.centerx) and abs(enemy.rect.centery - player.rect.centery) < abs(enemy.rect.centery - bonus.rect.centery):
-                                if enemy.x < player.x + 60:
+                                if enemy.x < player.x + 50:
                                     enemy.change_animation('right')
                                     enemy.x += enemy.speed
                                     self.enemy_static = False
@@ -433,7 +456,7 @@ class Runner:
                                     self.enemy_static = False
                     else:
                         # механика движения врага, если нет бонусов
-                        if enemy.x < player.x + 60:
+                        if enemy.x < player.x + 50:
                             enemy.change_animation('right')
                             enemy.x += enemy.speed
                             self.enemy_static = False
@@ -460,7 +483,7 @@ class Runner:
                         if 0 > magicball.x + magicball.width or magicball.x > width or magicball.y + magicball.height < 0 or magicball.y > height:
                             player.attacks.remove(magicball)
 
-                        if abs(magicball.x - enemy.x) < 60 and abs(magicball.y - enemy.y) < 60:
+                        if abs(magicball.x - enemy.x) < enemy.width and abs(magicball.y - enemy.y) < enemy.height:
                             enemy.hp -= magicball.damage
                             player.attacks.remove(magicball)
 
@@ -476,9 +499,9 @@ class Runner:
                     player.current_hp = player.max_hp
                     player.x, player.y = 200, 100
 
+                if len(player.bonuses) > 1:
+                    player.bonuses.pop(0)
                 if self.bonus_ticks <= 0:
-                    if 0 < len(player.bonuses) > 1:
-                        player.bonuses.pop(0)
                     player.add_bonus()
                     self.bonus_ticks = random.randint(5000, 6000)
                 else:
@@ -498,7 +521,7 @@ class Runner:
 
             elif self.main_menu:
                 if not self.new_game_confirm:
-                    screen.blit(pygame.font.Font(None, 40).render('RPG BETA 1.0 TEST', True, (235, 0, 0)), (width/2-150, 5))
+                    screen.blit(pygame.font.Font(None, 40).render('RPG BETA 1.1', True, (235, 0, 0)), (width/2-150, 5))
                     screen.blit(pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/attack/player_attack_left.png'), (500, 500)), (600, 80))
                     with open('files/txt/save_01.txt', 'r') as f:
                         file = f.readlines()
@@ -640,7 +663,7 @@ class Runner:
             # if keys[pygame.K_k] and keys[pygame.K_r] and keys[pygame.K_m]:
             #     player.current_xp += 10
             pygame.display.flip()
-            self.clock.tick(550)
+            self.clock.tick(600)
 
 
 if __name__ == "__main__":
