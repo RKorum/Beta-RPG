@@ -310,7 +310,7 @@ class Bonus:
             enemy.width += 20
             enemy.height += 20
             # текстурки синхронизируем
-            self.animations = {
+            enemy.animations = {
                 'left': (
                     pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/left/enemy_run_left_2.png'), (enemy.width, enemy.height)),
                     pygame.transform.smoothscale(pygame.image.load('Image/Enemy/animations/left/enemy_run_left.png'), (enemy.width, enemy.height))
@@ -355,6 +355,7 @@ class Runner:
         self.new_game_confirm = False
         self.menu_opened = False
         self.menu_with_skillpoints_opened = False
+        self.updates_check = False
 
         self.enemy_static = False
         self.youhavesp = pygame.font.Font(None, 25).render(f'У вас есть доступные очки навыков, вы можете открыть меню прокачки, нажав клавишу "G"', True, (90, 90, 90))
@@ -520,18 +521,21 @@ class Runner:
                 screen.blit(player.image, (player.x, player.y))
 
             elif self.main_menu:
-                if not self.new_game_confirm:
-                    screen.blit(pygame.font.Font(None, 40).render('RPG BETA 1.1', True, (235, 0, 0)), (width/2-150, 5))
+                if not self.new_game_confirm and not self.updates_check:
+                    screen.blit(pygame.font.Font(None, 40).render('RPG BETA 1.2', True, (235, 0, 0)), (width/2-150, 5))
                     screen.blit(pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/attack/player_attack_left.png'), (500, 500)), (600, 80))
                     with open('files/txt/save_01.txt', 'r') as f:
                         file = f.readlines()
+
                     text_new_game = pygame.font.Font(None, 40).render('[*] Начать новую игру', True, (255, 255, 255))
                     text_continue = pygame.font.Font(None, 40).render('[*] Продолжить игру', True, (255, 255, 255) if file else (100, 100, 100))
+                    update_list = pygame.font.Font(None, 40).render('[*] Список Изменений', True, (255, 255, 255))
                     text_exit = pygame.font.Font(None, 40).render('[*] Выход', True, (255, 0, 0))
 
                     text_new_game_rect = pygame.Rect(25, 100, text_new_game.get_width(), text_new_game.get_height())
                     text_continue_rect = pygame.Rect(25, 150, text_continue.get_width(), text_continue.get_height())
-                    text_exit_rect = pygame.Rect(25, 200, text_exit.get_width(), text_exit.get_height())
+                    update_list_rect = pygame.Rect(25, 200, update_list.get_width(), update_list.get_height())
+                    text_exit_rect = pygame.Rect(25, 250, text_exit.get_width(), text_exit.get_height())
 
                     if pygame.mouse.get_pressed()[0]:
                         mouse_pos = pygame.mouse.get_pos()
@@ -540,17 +544,40 @@ class Runner:
                                 self.new_game_confirm = True
                             else:
                                 self.main_menu = False
+
                         if text_continue_rect.collidepoint(mouse_pos) and file:
                             self.main_menu = False
+
                         elif text_continue_rect.collidepoint(mouse_pos) and not file:
                             screen.blit(pygame.font.Font(None, 30).render('У вас нет ещё ни одного сохранения', True, (100, 100, 100)), (15, height-40))
+
+                        if update_list_rect.collidepoint(mouse_pos):
+                            self.updates_check = True
                         if text_exit_rect.collidepoint(mouse_pos):
                             player.save_game()
                             pygame.quit()
 
                     screen.blit(text_new_game, (25, 100))
                     screen.blit(text_continue, (25, 150))
-                    screen.blit(text_exit, (25, 200))
+                    screen.blit(update_list, (25, 200))
+                    screen.blit(text_exit, (25, 250))
+                elif self.updates_check:
+                    screen.fill((0, 0, 0))
+                    screen.blit(pygame.transform.smoothscale(pygame.image.load('Image/Player/static/playerstatic_left.png'), (400, 400)), (700, 300))
+                    text_for_exit = pygame.font.Font(None, 35).render('<< Выход в главное меню', True, (255, 0, 0))
+                    screen.blit(pygame.font.Font(None, 50).render('Список обновлений', True, (255, 255, 255)), (500, 5))
+                    screen.blit(text_for_exit, (5, 5))
+
+                    screen.blit(pygame.font.Font(None, 30).render('1.0 - сделана игра с нуля, уже были такие функции как движение игрока, анимации и так далее.', True, (255, 255, 255)), (25, 100))
+                    screen.blit(pygame.font.Font(None, 30).render('1.1 - немного оптимизировал игру, укоротил название в главном меню с \"RPG BETA 1.0 TEST\", на \"RPG BETA 1.1\".', True, (255, 255, 255)), (25, 150))
+                    screen.blit(pygame.font.Font(None, 30).render('1.2 - фикс одного бага (враг не увеличивался при поднятии бонусов), добавление списка изменений.', True, (255, 255, 255)), (25, 200))
+                    screen.blit(pygame.font.Font(None, 30).render('Переделаны текстуры атаки игрока', True, (255, 255, 255)), (800, 230))
+
+                    text_for_exit_rect = pygame.Rect(5, 5, text_for_exit.get_width(), text_exit.get_height())
+                    if pygame.mouse.get_pressed()[0]:
+                        mouse_pos = pygame.mouse.get_pos()
+                        if text_for_exit_rect.collidepoint(mouse_pos):
+                            self.updates_check = False
                 else:
                     screen.fill((0, 0, 0))
                     # рисуем рамку
