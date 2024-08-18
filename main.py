@@ -115,6 +115,7 @@ class Player:
         pygame.mixer.music.load(f'files/music/{self.current_music}')
         pygame.mixer.music.set_volume(100)
         pygame.mixer.music.play(-1)
+        self.pause = False
 
     def change_animation(self, movement):
         if self.attack_cd <= 0:
@@ -147,7 +148,7 @@ class Player:
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
     def save_game(self):
-        files = f'x:{self.x}\n y:{self.y}\n current_hp:{self.current_hp}\n current_damage:{self.current_damage}\n max_hp:{self.max_hp}\n current_level:{self.current_level}\n current_xp:{self.current_xp}\n current_need_xp:{self.current_need_xp}\n skillpoint:{self.skillpoint}\n added_power:{self.added_power}\n added_health:{self.added_hp}\n current_song:{self.current_music}'.encode('utf-8').hex()
+        files = f'x:{self.x}\n y:{self.y}\n current_hp:{self.current_hp}\n current_damage:{self.current_damage}\n max_hp:{self.max_hp}\n current_level:{self.current_level}\n current_xp:{self.current_xp}\n current_need_xp:{self.current_need_xp}\n skillpoint:{self.skillpoint}\n added_power:{self.added_power}\n added_health:{self.added_hp}\n current_song:{self.current_music}\n pause:{self.pause}'.encode('utf-8').hex()
         with open('files/txt/save_01.txt', 'w') as f:
             f.write(files)
 
@@ -179,6 +180,10 @@ class Player:
                 pygame.mixer.music.load(f'files/music/{self.current_music}')
                 pygame.mixer.music.set_volume(100)
                 pygame.mixer.music.play(-1)
+
+                self.pause = bool(files[12].split('pause:')[1])
+                if self.pause:
+                    pygame.mixer.music.pause()
             except Exception:
                 pass
 
@@ -266,6 +271,7 @@ class Enemy:
 
         self.attack_timer = 0
         self.wait_attack = False
+        self.enemy_static = False
 
     def change_animation(self, movement):
         current_time = pygame.time.get_ticks()
@@ -379,7 +385,6 @@ class Runner:
         self.music_choicer = False
         self.wait_music = False
 
-        self.enemy_static = False
         self.youhavesp = pygame.font.Font(None, 25).render(f'У вас есть доступные очки навыков, вы можете открыть меню прокачки, нажав клавишу "G"', True, (90, 90, 90))
         self.bonus_ticks = random.randint(5000, 12000)
 
@@ -453,55 +458,55 @@ class Runner:
                                 if enemy.x < player.x + 50:
                                     enemy.change_animation('right')
                                     enemy.x += enemy.speed
-                                    self.enemy_static = False
+                                    enemy.enemy_static = False
                                 if enemy.y < player.y:
                                     enemy.y += enemy.speed
-                                    self.enemy_static = False
+                                    enemy.enemy_static = False
                                 if enemy.x > player.x - 60:
                                     enemy.change_animation('left')
                                     enemy.x -= enemy.speed
-                                    self.enemy_static = False
+                                    enemy.enemy_static = False
                                 if enemy.y > player.y:
                                     enemy.y -= enemy.speed
-                                    self.enemy_static = False
+                                    enemy.enemy_static = False
 
                             else:
                                 if enemy.x < bonus.x:
                                     enemy.change_animation('right')
                                     enemy.x += enemy.speed / 2
-                                    self.enemy_static = False
+                                    enemy.enemy_static = False
                                 if enemy.x > bonus.x:
                                     enemy.change_animation('left')
                                     enemy.x -= enemy.speed / 2
-                                    self.enemy_static = False
+                                    enemy.enemy_static = False
                                 if enemy.y < bonus.y:
                                     enemy.y += enemy.speed / 2
-                                    self.enemy_static = False
+                                    enemy.enemy_static = False
                                 if enemy.y > bonus.y:
                                     enemy.y -= enemy.speed / 2
-                                    self.enemy_static = False
+                                    enemy.enemy_static = False
                     else:
                         # механика движения врага, если нет бонусов
                         if enemy.x < player.x + 50:
                             enemy.change_animation('right')
                             enemy.x += enemy.speed
-                            self.enemy_static = False
+                            enemy.enemy_static = False
                         if enemy.y < player.y:
                             enemy.y += enemy.speed
-                            self.enemy_static = False
+                            enemy.enemy_static = False
                         if enemy.x > player.x - 60:
                             enemy.change_animation('left')
                             enemy.x -= enemy.speed
-                            self.enemy_static = False
+                            enemy.enemy_static = False
                         if enemy.y > player.y:
                             enemy.y -= enemy.speed
-                            self.enemy_static = False
+                            enemy.enemy_static = False
 
-                    if abs(enemy.x - player.x) <= 60 and abs(enemy.y - player.y) <= 15:
-                        self.enemy_static = True
+                    if abs(enemy.x - player.x) <= 70 and abs(enemy.y - player.y) <= 15:
+                        enemy.enemy_static = True
                         enemy.change_animation('static')
 
-                    if self.enemy_static:
+                    if enemy.enemy_static:
                         enemy.attack(player)
 
                     for magicball in player.attacks:
@@ -540,13 +545,11 @@ class Runner:
                 if player.skillpoint > 0:
                     screen.blit(self.youhavesp, (0, height - 55))
 
-                # screen.blit(pygame.image.load('Image/bg/bg.png'), (0, 0))
-
                 screen.blit(player.image, (player.x, player.y))
 
             elif self.main_menu:
                 if not self.new_game_confirm and not self.updates_check and not self.settings:
-                    screen.blit(pygame.font.Font(None, 40).render('RPG BETA 1.3', True, (235, 0, 0)), (width / 2 - 150, 5))
+                    screen.blit(pygame.font.Font(None, 40).render('RPG BETA 1.4', True, (235, 0, 0)), (width / 2 - 150, 5))
                     screen.blit(pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/attack/player_attack_left.png'), (500, 500)),(600, 80))
                     with open('files/txt/save_01.txt', 'r') as f:
                         file = f.readlines()
@@ -597,8 +600,7 @@ class Runner:
                     if not self.music_choicer and not self.wait_music:
                         screen.blit(pygame.font.Font(None, 50).render('Настройки', True, (235, 0, 0)), (450, 5))
 
-                        music_choicer_text = pygame.font.Font(None, 40).render('[*] Настройки музыки', True,
-                                                                               (255, 255, 255))
+                        music_choicer_text = pygame.font.Font(None, 40).render('[*] Настройки музыки', True, (255, 255, 255))
                         music_choicer_rect = pygame.Rect(25, 80, music_choicer_text.get_width(), music_choicer_text.get_height())
                         screen.blit(music_choicer_text, music_choicer_rect)
 
@@ -638,6 +640,8 @@ class Runner:
                         add_music_text = pygame.font.Font(None, 30).render('Добавить песню', True, (255, 255, 255))
                         add_music_text_rect = pygame.Rect(20, height-100, add_music_text.get_width(), add_music_text.get_height())
 
+                        stop_music_text = pygame.font.Font(None, 30).render('Остановить музыку', True, (255, 255, 255) if not player.pause else (144, 144, 144))
+                        stop_music_rect = pygame.Rect(500, height-100, stop_music_text.get_width(), stop_music_text.get_height())
                         for i, music in enumerate(os.listdir('files/music')):
                             music_rects.append(pygame.Rect(x_m, y_m, music_texts[i].get_width(), music_texts[i].get_height()))
                             if y_m < height-100:
@@ -658,11 +662,18 @@ class Runner:
                                 self.music_choicer = False
                             if add_music_text_rect.collidepoint(mouse_pos):
                                 self.wait_music = True
+                            if stop_music_rect.collidepoint(mouse_pos):
+                                player.pause = not player.pause
+                                if player.pause:
+                                    pygame.mixer.music.pause()
+                                else:
+                                    pygame.mixer.music.unpause()
 
                         for i, music in enumerate(music_texts):
                             screen.blit(music, music_rects[i])
                         screen.blit(pygame.font.Font(None, 50).render('Выбор песни', True, (235, 0, 0)), (450, 5))
                         screen.blit(text_exit, text_exit_rect)
+                        screen.blit(stop_music_text, stop_music_rect)
 
                 elif self.updates_check:
                     screen.fill((0, 0, 0))
@@ -674,7 +685,8 @@ class Runner:
                     screen.blit(pygame.font.Font(None, 30).render('1.1 - немного оптимизировал игру, укоротил название в главном меню с \"RPG BETA 1.0 TEST\", на \"RPG BETA 1.1\".', True, (255, 255, 255)), (25, 150))
                     screen.blit(pygame.font.Font(None, 30).render('1.2 - фикс одного бага (враг не увеличивался при поднятии бонусов), добавление списка изменений.', True, (255, 255, 255)), (25, 200))
                     screen.blit(pygame.font.Font(None, 30).render('Переделаны текстуры атаки игрока', True, (255, 255, 255)), (800, 230))
-                    screen.blit(pygame.font.Font(None, 30).render('1.3 - Добавлена музыка на фон (вы можете её изменить и позже переключать из добавленных), и настройки.', True, (255, 255, 255)), (25, 260))
+                    screen.blit(pygame.font.Font(None, 30).render('1.3 - Добавлена музыка на фон (вы можете её изменить и позже переключать из добавленных), и настройки.', True, (255, 255, 255)), (25, 270))
+                    screen.blit(pygame.font.Font(None, 30).render('1.4 - Добавлена возможность остановить музыку в настройках.', True, (255, 255, 255)), (25, 320))
 
                     text_for_exit_rect = pygame.Rect(5, 5, text_for_exit.get_width(), text_exit.get_height())
                     screen.blit(text_for_exit, text_for_exit_rect)
@@ -718,20 +730,20 @@ class Runner:
                 screen.blit(text, (400, 30))
 
                 back = pygame.font.Font(None, 40).render(f'<<', True, (255, 0, 0))
-                screen.blit(back, (0, 30))
+                back_rect = pygame.Rect(0, 30, back.get_width(), back.get_height())
+                screen.blit(back, back_rect)
 
                 text = pygame.font.Font(None, 30).render(f'На данный момент у вас {player.skillpoint} очков навыка', True, (255, 255, 255))
                 screen.blit(text, (410, 70))
 
                 power_of_player = pygame.font.Font(None, 30).render(f'Сила персонажа: {player.current_damage} ({player.added_power}) [+]', False, (255, 255, 255))
-                screen.blit(power_of_player, (10, 100))
+                power_of_player_rect = pygame.Rect(10, 100, power_of_player.get_width(), power_of_player.get_height())
+                screen.blit(power_of_player, power_of_player_rect)
 
                 health_of_player = pygame.font.Font(None, 30).render(f'Здоровье персонажа: {player.max_hp} ({player.added_hp}) [+]', False, (255, 255, 255))
-                screen.blit(health_of_player, (10, 140))
-
-                back_rect = pygame.Rect(0, 30, back.get_width(), back.get_height())
-                power_of_player_rect = pygame.Rect(10, 100, power_of_player.get_width(), power_of_player.get_height())
                 health_of_player_rect = pygame.Rect(10, 140, health_of_player.get_width(), health_of_player.get_height())
+                screen.blit(health_of_player, health_of_player_rect)
+
 
                 if pygame.mouse.get_pressed()[0]:
                     mouse_pos = pygame.mouse.get_pos()
