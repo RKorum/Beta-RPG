@@ -150,7 +150,10 @@ class Player:
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
     def save_game(self):
-        files = f'x:{self.x}\n y:{self.y}\n current_hp:{self.current_hp}\n current_damage:{self.current_damage}\n max_hp:{self.max_hp}\n current_level:{self.current_level}\n current_xp:{self.current_xp}\n current_need_xp:{self.current_need_xp}\n skillpoint:{self.skillpoint}\n added_power:{self.added_power}\n added_health:{self.added_hp}\n current_song:{self.current_music}'.encode('utf-8').hex()
+        files = (f'x:{self.x}\n y:{self.y}\n current_hp:{self.current_hp}\n current_damage:{self.current_damage}\n '
+                 f'max_hp:{self.max_hp}\n current_level:{self.current_level}\n current_xp:{self.current_xp}\n '
+                 f'current_need_xp:{self.current_need_xp}\n skillpoint:{self.skillpoint}\n added_power:{self.added_power}\n '
+                 f'added_health:{self.added_hp}\n current_song:{self.current_music}').encode('utf-8').hex()
         with open('files/txt/save_01.txt', 'w') as f:
             f.write(files)
 
@@ -380,8 +383,42 @@ class Runner:
 
         self.pressed_button = False
 
-        self.youhavesp = pygame.font.Font(None, 25).render(f'У вас есть доступные очки навыков, вы можете открыть меню прокачки, нажав клавишу "G"', True, (90, 90, 90))
         self.bonus_ticks = random.randint(5000, 12000)
+        self.__particles_list = []
+
+        with open('files/txt/save_01.txt', 'r') as d:
+            data = d.readlines()
+
+        self.rendered_texts = {
+            'lack_skillpoints': pygame.font.Font(None, 30).render(f'У вас недостаточно очков навыков', True, (90, 90, 90)),
+            'skillpoints': pygame.font.Font(None, 25).render(f'У вас есть доступные очки навыков, вы можете открыть меню прокачки, нажав клавишу "G"', True, (90, 90, 90)),
+            'game_name': pygame.font.Font(None, 40).render('RPG BETA 1.6', True, (235, 0, 0))
+        }
+        self.rendered_buttons = {  # поначалу кнопки с главного экрана
+            'new_game': pygame.font.Font(None, 40).render('[*] Начать новую игру', True, (255, 255, 255)),
+            'continue': pygame.font.Font(None, 40).render('[*] Продолжить игру', True, (255, 255, 255) if data else (100, 100, 100)),
+            'updatelist': pygame.font.Font(None, 40).render('[*] Список Изменений', True, (255, 255, 255)),
+            'settings': pygame.font.Font(None, 40).render('[*] Настройки', True, (255, 255, 255)),
+            'about_creators': pygame.font.Font(None, 40).render('[*] О Разработчиках', True, (255, 255, 255)),
+            'exit': pygame.font.Font(None, 40).render('[*] Выход', True, (255, 0, 0))
+        }
+        self.rendered_buttons_rects = {  # поначалу кнопки с главного меню
+            'new_game': pygame.Rect(25, 100, self.rendered_buttons['new_game'].get_width(), self.rendered_buttons['new_game'].get_height()),
+            'continue': pygame.Rect(25, 150, self.rendered_buttons['continue'].get_width(), self.rendered_buttons['continue'].get_height()),
+            'updatelist': pygame.Rect(25, 200, self.rendered_buttons['updatelist'].get_width(), self.rendered_buttons['updatelist'].get_height()),
+            'settings': pygame.Rect(25, 250, self.rendered_buttons['settings'].get_width(), self.rendered_buttons['settings'].get_height()),
+            'about_creators': pygame.Rect(25, 300, self.rendered_buttons['about_creators'].get_width(), self.rendered_buttons['about_creators'].get_height()),
+            'exit': pygame.Rect(25, 350, self.rendered_buttons['exit'].get_width(), self.rendered_buttons['exit'].get_height())
+        }
+        self.rendered_updatelist = {
+            '1.0': pygame.font.Font(None, 30).render('1.0 - сделана игра с нуля, уже были такие функции как движение игрока, анимации и так далее.', True, (255, 255, 255)),
+            '1.1': pygame.font.Font(None, 30).render('1.1 - немного оптимизировал игру, укоротил название в главном меню с \"RPG BETA 1.0 TEST\", на \"RPG BETA 1.1\".', True, (255, 255, 255)),
+            '1.2': pygame.font.Font(None, 30).render(f'1.2 - фикс одного бага (враг не увеличивался при поднятии бонусов), добавление списка изменений.\n{" "*125}Переделаны текстуры атаки игрока', True, (255, 255, 255)),
+            '1.3': pygame.font.Font(None, 30).render('1.3 - Добавлена музыка на фон (вы можете её изменить и позже переключать из добавленных), и настройки.', True, (255, 255, 255)),
+            '1.4': pygame.font.Font(None, 30).render('1.4 - Добавлена возможность остановить музыку в настройках.', True, (255, 255, 255)),
+            '1.5': pygame.font.Font(None, 30).render(f'1.5 - Пофикшены баги, добавлен раздел \"О Разработчиках\".\n{" "*15}В разработку добавился XMan327, он помогает с текстурами', True, (255, 255, 255)),
+            '1.6': pygame.font.Font(None, 30).render('1.6 - простая оптимизация, ничего интересного', True, (255, 255, 255))
+        }
 
     def run(self):
         helper = Helper()
@@ -404,7 +441,7 @@ class Runner:
                 if self.wait_music and event.type == pygame.DROPFILE:
                     shutil.copy(event.file, 'files/music/')
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_g and not self.main_menu:
+                    if (event.key == pygame.K_g or event.key == pygame.K_ESCAPE) and not self.main_menu:
                         self.menu_opened = not self.menu_opened
 
             # самое интересное
@@ -537,66 +574,53 @@ class Runner:
                 screen.blit(text_hp, (0, height - 25))
 
                 if player.skillpoint > 0:
-                    screen.blit(self.youhavesp, (0, height - 55))
+                    screen.blit(self.rendered_texts['skillpoints'], (0, height - 55))
 
                 screen.blit(player.image, (player.x, player.y))
 
             elif self.main_menu:
                 if not self.new_game_confirm and not self.updates_check and not self.settings and not self.about_creators:
-                    screen.blit(pygame.font.Font(None, 40).render('RPG BETA 1.5', True, (235, 0, 0)), (width / 2 - 150, 5))
+                    screen.blit(self.rendered_texts['game_name'], (width / 2 - 150, 5))
                     screen.blit(pygame.transform.smoothscale(pygame.image.load('Image/Player/animations/attack/player_attack_left.png'), (500, 500)), (600, 80))
+
                     with open('files/txt/save_01.txt', 'r') as f:
                         file = f.readlines()
 
-                    text_new_game = pygame.font.Font(None, 40).render('[*] Начать новую игру', True, (255, 255, 255))
-                    text_continue = pygame.font.Font(None, 40).render('[*] Продолжить игру', True, (255, 255, 255) if file else (100, 100, 100))
-                    update_list = pygame.font.Font(None, 40).render('[*] Список Изменений', True, (255, 255, 255))
-                    settings_text = pygame.font.Font(None, 40).render('[*] Настройки', True, (255, 255, 255))
-                    about_creators_text = pygame.font.Font(None, 40).render('[*] О Разработчиках', True, (255, 255, 255))
-                    text_exit = pygame.font.Font(None, 40).render('[*] Выход', True, (255, 0, 0))
-
-                    text_new_game_rect = pygame.Rect(25, 100, text_new_game.get_width(), text_new_game.get_height())
-                    text_continue_rect = pygame.Rect(25, 150, text_continue.get_width(), text_continue.get_height())
-                    update_list_rect = pygame.Rect(25, 200, update_list.get_width(), update_list.get_height())
-                    settings_text_rect = pygame.Rect(25, 250, settings_text.get_width(), settings_text.get_height())
-                    about_creators_rect = pygame.Rect(25, 300, about_creators_text.get_width(), about_creators_text.get_height())
-                    text_exit_rect = pygame.Rect(25, 350, text_exit.get_width(), text_exit.get_height())
-
                     if pygame.mouse.get_pressed()[0]:
                         mouse_pos = pygame.mouse.get_pos()
-                        if text_new_game_rect.collidepoint(mouse_pos) and not self.pressed_button:
+                        if self.rendered_buttons_rects['new_game'].collidepoint(mouse_pos) and not self.pressed_button:
                             if file:
                                 self.new_game_confirm = True
                             else:
                                 self.main_menu = False
 
-                        if text_continue_rect.collidepoint(mouse_pos) and file and not self.pressed_button:
+                        if self.rendered_buttons_rects['continue'].collidepoint(mouse_pos) and file and not self.pressed_button:
                             self.main_menu = False
 
-                        elif text_continue_rect.collidepoint(mouse_pos) and not file:
+                        elif self.rendered_buttons_rects['continue'].collidepoint(mouse_pos) and not file:
                             screen.blit(pygame.font.Font(None, 30).render('У вас нет ещё ни одного сохранения', True, (100, 100, 100)), (15, height - 40))
 
-                        if update_list_rect.collidepoint(mouse_pos) and not self.pressed_button:
+                        if self.rendered_buttons_rects['updatelist'].collidepoint(mouse_pos) and not self.pressed_button:
                             self.updates_check = True
 
-                        if settings_text_rect.collidepoint(mouse_pos) and not self.pressed_button:
+                        if self.rendered_buttons_rects['settings'].collidepoint(mouse_pos) and not self.pressed_button:
                             self.settings = True
 
-                        if about_creators_rect.collidepoint(mouse_pos) and not self.pressed_button:
+                        if self.rendered_buttons_rects['about_creators'].collidepoint(mouse_pos) and not self.pressed_button:
                             self.about_creators = True
 
-                        if text_exit_rect.collidepoint(mouse_pos) and not self.pressed_button:
+                        if self.rendered_buttons_rects['exit'].collidepoint(mouse_pos) and not self.pressed_button:
                             player.save_game()
                             pygame.quit()
                     else:
                         self.pressed_button = False
 
-                    screen.blit(text_new_game, text_new_game_rect)
-                    screen.blit(text_continue, text_continue_rect)
-                    screen.blit(update_list, update_list_rect)
-                    screen.blit(settings_text, settings_text_rect)
-                    screen.blit(about_creators_text, about_creators_rect)
-                    screen.blit(text_exit, text_exit_rect)
+                    screen.blit(self.rendered_buttons['new_game'], self.rendered_buttons_rects['new_game'])
+                    screen.blit(self.rendered_buttons['continue'], self.rendered_buttons_rects['continue'])
+                    screen.blit(self.rendered_buttons['updatelist'], self.rendered_buttons_rects['updatelist'])
+                    screen.blit(self.rendered_buttons['settings'], self.rendered_buttons_rects['settings'])
+                    screen.blit(self.rendered_buttons['about_creators'], self.rendered_buttons_rects['about_creators'])
+                    screen.blit(self.rendered_buttons['exit'], self.rendered_buttons_rects['exit'])
 
                 elif self.settings:
                     if not self.music_choicer and not self.wait_music:
@@ -694,17 +718,16 @@ class Runner:
                     screen.blit(pygame.transform.smoothscale(pygame.image.load('Image/Player/static/playerstatic_left.png'), (400, 400)), (700, 300))
                     screen.blit(pygame.font.Font(None, 50).render('Список обновлений', True, (235, 0, 0)), (350, 5))
 
-                    screen.blit(pygame.font.Font(None, 30).render('1.0 - сделана игра с нуля, уже были такие функции как движение игрока, анимации и так далее.', True, (255, 255, 255)), (25, 100))
-                    screen.blit(pygame.font.Font(None, 30).render('1.1 - немного оптимизировал игру, укоротил название в главном меню с \"RPG BETA 1.0 TEST\", на \"RPG BETA 1.1\".', True, (255, 255, 255)), (25, 150))
-                    screen.blit(pygame.font.Font(None, 30).render('1.2 - фикс одного бага (враг не увеличивался при поднятии бонусов), добавление списка изменений.', True, (255, 255, 255)), (25, 200))
-                    screen.blit(pygame.font.Font(None, 30).render('Переделаны текстуры атаки игрока', True, (255, 255, 255)), (800, 230))
-                    screen.blit(pygame.font.Font(None, 30).render('1.3 - Добавлена музыка на фон (вы можете её изменить и позже переключать из добавленных), и настройки.', True, (255, 255, 255)), (25, 270))
-                    screen.blit(pygame.font.Font(None, 30).render('1.4 - Добавлена возможность остановить музыку в настройках.', True, (255, 255, 255)), (25, 320))
-                    screen.blit(pygame.font.Font(None, 30).render('1.5 - Пофикшены баги, добавлен раздел \"О Разработчиках\".', True, (255, 255, 255)), (25, 370))
-                    screen.blit(pygame.font.Font(None, 30).render('Присоединился к разработке XMan327, он будет помогать с текстурами', True, (255, 255, 255)), (75, 400))
+                    screen.blit(self.rendered_updatelist['1.0'], (25, 100))
+                    screen.blit(self.rendered_updatelist['1.1'], (25, 150))
+                    screen.blit(self.rendered_updatelist['1.2'], (25, 200))
+                    screen.blit(self.rendered_updatelist['1.3'], (25, 250))
+                    screen.blit(self.rendered_updatelist['1.4'], (25, 300))
+                    screen.blit(self.rendered_updatelist['1.5'], (25, 350))
+                    screen.blit(self.rendered_updatelist['1.6'], (25, 400))
 
                     text_for_exit = pygame.font.Font(None, 40).render('<<', True, (255, 0, 0))
-                    text_for_exit_rect = pygame.Rect(5, 10, text_for_exit.get_width(), text_exit.get_height())
+                    text_for_exit_rect = pygame.Rect(5, 10, text_for_exit.get_width(), text_for_exit.get_height())
                     screen.blit(text_for_exit, text_for_exit_rect)
                     if pygame.mouse.get_pressed()[0]:
                         mouse_pos = pygame.mouse.get_pos()
@@ -730,8 +753,8 @@ class Runner:
                         self.pressed_button = False
                     screen.blit(text_exit, text_exit_rect)
 
-                    screen.blit(pygame.font.Font(None, 32).render('RKorum - Работа С Кодом, Основной Разработчик (с самого начала, ведь так-то он и придумал всё это)', False, (255, 255, 255)), (25, 100))
-                    screen.blit(pygame.font.Font(None, 32).render('XMan327 - Помощь С Текстурами (присоединился после бета-версии 1.5)', False, (255, 255, 255)), (350, 150))
+                    screen.blit(pygame.font.Font(None, 32).render('RKorum - Работа С Кодом', False, (255, 255, 255)), (25, 100))
+                    screen.blit(pygame.font.Font(None, 32).render('XMan327 - Помощь С Текстурами', False, (255, 255, 255)), (350, 150))
 
                 else:
                     screen.fill((0, 0, 0))
@@ -769,14 +792,14 @@ class Runner:
                         self.pressed_button = False
 
             elif self.menu_with_skillpoints_opened:
-                text = pygame.font.Font(None, 50).render(f'Меню прокачки навыков', True, (255, 255, 255))
+                text = pygame.font.Font(None, 50).render(f'Меню улучшения навыков', True, (255, 255, 255))
                 screen.blit(text, (400, 30))
 
                 back = pygame.font.Font(None, 40).render(f'<<', True, (255, 0, 0))
                 back_rect = pygame.Rect(0, 10, back.get_width(), back.get_height())
                 screen.blit(back, back_rect)
 
-                text = pygame.font.Font(None, 30).render(f'На данный момент у вас {player.skillpoint} очков навыка', True, (255, 255, 255))
+                text = pygame.font.Font(None, 30).render(f'На данный момент у вас {player.skillpoint} очков', True, (255, 255, 255))
                 screen.blit(text, (410, 70))
 
                 power_of_player = pygame.font.Font(None, 30).render(f'Сила персонажа: {player.current_damage} ({player.added_power}) [+]', False, (255, 255, 255))
@@ -801,8 +824,7 @@ class Runner:
                         player.max_hp += 5
 
                     elif power_of_player_rect.collidepoint(mouse_pos) and player.skillpoint <= 0 or health_of_player_rect.collidepoint(mouse_pos) and player.skillpoint <= 0:
-                        text = pygame.font.Font(None, 30).render(f'У вас недостаточно очков навыков', True, (90, 90, 90))
-                        screen.blit(text, (0, 600))
+                        screen.blit(self.rendered_texts['lack_skillpoints'], (0, 600))
 
                     elif back_rect.collidepoint(mouse_pos) and not self.pressed_button:
                         self.menu_with_skillpoints_opened = False
